@@ -11,9 +11,13 @@ from dotenv import load_dotenv
 # Load environment variables from .env
 # ----------------------
 load_dotenv()
-
 CLIENT_ID = os.getenv('SPOTIFY_CLIENT_ID')
 CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
+
+# Debug prints
+print("CLIENT_ID loaded:", "Yes" if CLIENT_ID else "No")
+print("CLIENT_SECRET loaded:", "Yes" if CLIENT_SECRET else "No")
+
 REDIRECT_URI = 'http://127.0.0.1:5000/callback'
 SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize'
 SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'
@@ -28,7 +32,7 @@ db = SQLAlchemy(app)
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ----------------------
-# Database Models
+# Database Models (Keep your existing models)
 # ----------------------
 class User(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -61,6 +65,10 @@ class Vote(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     request_id = db.Column(db.Integer, db.ForeignKey('request.id'), nullable=False)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+@app.route('/')
+def home():
+    return "Welcome to Safety Music Zone! Use /login to authenticate with Spotify."
 
 # ----------------------
 # OAuth Routes
@@ -134,4 +142,4 @@ def search_song():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
-    socketio.run(app, host='0.0.0.0', port=5000)
+    socketio.run(app, host='0.0.0.0', port=5000, debug=True)
