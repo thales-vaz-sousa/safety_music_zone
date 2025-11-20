@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Safety Music Zone - Test Interface</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 40px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 30px 0; padding: 20px; border: 1px solid #ddd; border-radius: 5px; }
+        input { padding: 8px; margin: 5px; width: 300px; }
+        button { padding: 8px 16px; background: #007bff; color: white; border: none; cursor: pointer; border-radius: 4px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .result { margin: 20px 0; padding: 15px; border-radius: 5px; }
+        .success { background: #d4edda; border: 1px solid #c3e6cb; color: #155724; }
+        .error { background: #f8d7da; border: 1px solid #f5c6cb; color: #721c24; }
+        .info { background: #d1ecf1; border: 1px solid #bee5eb; color: #0c5460; }
+        .request-item { padding: 10px; margin: 5px 0; border: 1px solid #eee; border-radius: 4px; }
+        .explicit-true { border-left: 4px solid #dc3545; }
+        .explicit-false { border-left: 4px solid #28a745; }
+        .lyrics-unclean { border: 2px solid #dc3545 !important; background-color: #fff5f5; }
+        
+        /* Modal styles */
+        .modal { 
+            display: none; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            width: 100%; 
+            height: 100%; 
+            background: rgba(0,0,0,0.5); 
+            z-index: 1000; 
+        }
+        .modal-content { 
+            position: absolute; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            background: white; 
+            padding: 20px; 
+            border-radius: 5px; 
+            max-width: 600px; 
+            max-height: 80vh; 
+            overflow-y: auto; 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 Safety Music Zone - Test Interface</h1>
+        
+        <!-- Search Section -->
+        <div class="section">
+            <h2>🔍 Search Songs</h2>
+            <input type="text" id="searchQuery" placeholder="Enter song name..." value="Shape of You">
+            <button onclick="searchSongs()">Search</button>
+            <div id="searchResults"></div>
+        </div>
+
+        <!-- Request Section -->
+        <div class="section">
+            <h2>📝 Submit Song Request</h2>
+            <input type="text" id="spotifyId" placeholder="Enter Spotify ID" value="7qiZfU4dY1lWllzX7mPBI3">
+            <button onclick="submitRequest()">Submit Request</button>
+            <div id="requestResult"></div>
+        </div>
+
+        <!-- DJ Requests Section -->
+        <div class="section">
+            <h2>🎛️ DJ Requests View</h2>
+            <button onclick="loadRequests()">Refresh Requests</button>
+            <div id="requestsList"></div>
+        </div>
+
+        <!-- Test Songs -->
+        <div class="section">
+            <h3>Test with these Spotify IDs:</h3>
+            <ul>
+                <li><strong>Shape of You:</strong> <code>7qiZfU4dY1lWllzX7mPBI3</code></li>
+                <li><strong>Blinding Lights:</strong> <code>0UaMYEvWZi0ZqiDOoHU3YI</code></li>
+                <li><strong>Happy:</strong> <code>1H5l3wy3p6tBxWaWK4QwS7</code></li>
+                <li><strong>Dance Monkey:</strong> <code>1rgnBhdG2JDFTbYkYRZAku</code></li>
+            </ul>
+        </div>
+    </div>
+
+    <!-- Lyrics Modal -->
+    <div id="lyricsModal" class="modal">
+        <div class="modal-content">
+            <h3 id="lyricsTitle">Song Lyrics</h3>
+            <div style="margin-bottom: 10px;">
+                <button onclick="refreshLyrics(currentSongId)" style="background: #17a2b8; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer; margin-right: 10px;">
+                    <i class="fas fa-sync-alt"></i> Refresh Lyrics
+                </button>
+            </div>
+            <div id="lyricsContent" style="white-space: pre-wrap; font-family: monospace; max-height: 400px; overflow-y: auto; background: #f8f9fa; padding: 15px; border-radius: 4px;"></div>
+            <button onclick="closeLyrics()" style="margin-top: 15px; background: #6c757d; color: white; border: none; padding: 8px 16px; border-radius: 4px; cursor: pointer;">Close</button>
+        </div>
+    </div>
+
+    <script>
+        let currentSongId = null;
+
+        // Search songs
+        async function searchSongs() {
+            const query = document.getElementById('searchQuery').value;
+            const resultsDiv = document.getElementById('searchResults');
+            
+            if (!query) {
+                resultsDiv.innerHTML = '<div class="error">Please enter a search query</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.tracks && data.tracks.length > 0) {
+                    let html = '<h4>Search Results:</h4>';
+                    data.tracks.forEach(track => {
+                        html += `
+                            <div class="request-item ${track.explicit ? 'explicit-true' : 'explicit-false'}">
+                                <strong>${track.title}</strong> by ${track.artist}<br>
+                                <small>Album: ${track.album} | Explicit: ${track.explicit ? '🔴 Yes' : '🟢 No'}</small><br>
+                                <small>Spotify ID: <code>${track.spotify_id}</code></small>
+                                <button onclick="useSpotifyId('${track.spotify_id}')">Use This ID</button>
+                            </div>
+                        `;
+                    });
+                    resultsDiv.innerHTML = html;
+                } else {
+                    resultsDiv.innerHTML = '<div class="info">No songs found</div>';
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Search failed: ${error}</div>`;
+            }
+        }
+
+        // Use Spotify ID from search results
+        function useSpotifyId(spotifyId) {
+            document.getElementById('spotifyId').value = spotifyId;
+        }
+
+        // Submit song request
+        async function submitRequest() {
+            const spotifyId = document.getElementById('spotifyId').value.trim();
+            const resultDiv = document.getElementById('requestResult');
+            
+            if (!spotifyId) {
+                resultDiv.innerHTML = '<div class="error">Please enter a Spotify ID</div>';
+                return;
+            }
+
+            try {
+                const response = await fetch('/request-song', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ spotify_id: spotifyId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    resultDiv.innerHTML = `
+                        <div class="success">
+                            <h3>✅ Success!</h3>
+                            <p><strong>Message:</strong> ${data.message}</p>
+                            <p><strong>Request ID:</strong> ${data.request_id}</p>
+                            <p><strong>Song:</strong> ${data.song_title} by ${data.artist}</p>
+                            ${data.lyrics_checked ? `<p><strong>Lyrics Check:</strong> ${data.lyrics_clean ? '🟢 Clean' : '🔴 Unclean'}</p>` : ''}
+                        </div>
+                    `;
+                    // Refresh requests list
+                    loadRequests();
+                } else {
+                    resultDiv.innerHTML = `
+                        <div class="error">
+                            <h3>❌ Error</h3>
+                            <p><strong>Error:</strong> ${data.error}</p>
+                            ${data.reasons ? `<p><strong>Reasons:</strong> ${data.reasons.join(', ')}</p>` : ''}
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="error">
+                        <h3>❌ Network Error</h3>
+                        <p><strong>Error:</strong> ${error}</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Load DJ requests
+        async function loadRequests() {
+            const requestsDiv = document.getElementById('requestsList');
+            
+            try {
+                const response = await fetch('/dj/requests');
+                const data = await response.json();
+                
+                if (response.ok) {
+                    if (data.length > 0) {
+                        let html = '<h4>Pending Requests:</h4>';
+                        data.forEach(req => {
+                            // Determine CSS classes based on content
+                            let cssClasses = 'request-item';
+                            if (req.explicit) cssClasses += ' explicit-true';
+                            if (!req.lyrics_clean) cssClasses += ' lyrics-unclean';
+                            
+                            html += `
+                                <div class="${cssClasses}">
+                                    <strong>${req.song_title}</strong> by ${req.artist}<br>
+                                    <small>
+                                        Album: ${req.album} | 
+                                        Explicit: ${req.explicit ? '🔴 Yes' : '🟢 No'} | 
+                                        Lyrics: ${req.lyrics_checked ? (req.lyrics_clean ? '🟢 Clean' : '🔴 Unclean') : '🟡 Not Checked'} |
+                                        Requested by: ${req.requested_by}
+                                    </small><br>
+                                    <small>Request ID: ${req.request_id}</small>
+                                    <div style="margin-top: 10px;">
+                                        <button onclick="approveRequest(${req.request_id})" style="background: #28a745;">Approve</button>
+                                        <button onclick="rejectRequest(${req.request_id})" style="background: #dc3545;">Reject</button>
+                                        <button onclick="viewLyrics(${req.song_id})" style="background: #17a2b8;">View Lyrics</button>
+                                    </div>
+                                </div>
+                            `;
+                        });
+                        requestsDiv.innerHTML = html;
+                    } else {
+                        requestsDiv.innerHTML = '<div class="info">No pending requests</div>';
+                    }
+                } else {
+                    requestsDiv.innerHTML = `<div class="error">Failed to load requests: ${data.error}</div>`;
+                }
+            } catch (error) {
+                requestsDiv.innerHTML = `<div class="error">Failed to load requests: ${error}</div>`;
+            }
+        }
+
+        // Approve request
+        async function approveRequest(requestId) {
+            try {
+                const response = await fetch(`/dj/approve/${requestId}`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(`✅ ${data.message}`);
+                    loadRequests(); // Refresh the list
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error}`);
+            }
+        }
+
+        // Reject request
+        async function rejectRequest(requestId) {
+            try {
+                const response = await fetch(`/dj/reject/${requestId}`, { method: 'POST' });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(`✅ ${data.message}`);
+                    loadRequests(); // Refresh the list
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error}`);
+            }
+        }
+
+        // View lyrics for a song - FIXED VERSION
+        async function viewLyrics(songId) {
+            console.log('DEBUG: viewLyrics called with songId:', songId);
+            currentSongId = songId;
+            
+            if (!songId || songId === 'undefined') {
+                alert('Error: No song ID provided');
+                return;
+            }
+            
+            try {
+                console.log(`DEBUG: Fetching lyrics for song ID: ${songId}`);
+                const response = await fetch(`/dj/lyrics/${songId}`);
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                console.log('DEBUG: Lyrics response:', data);
+                
+                // Build display content
+                let content = '';
+                let title = `Lyrics: ${data.song_title} by ${data.artist}`;
+                
+                // Add content warnings
+                if (data.explicit) {
+                    content += '⚠️ Explicit content flagged by Spotify\n\n';
+                }
+                if (!data.is_clean) {
+                    content += '⚠️ Inappropriate lyrics detected\n\n';
+                }
+                
+                if (data.lyrics_available && data.lyrics) {
+                    content += data.lyrics;
+                } else {
+                    content += 'No lyrics available for this song.\n\n';
+                    content += 'This could be because:\n';
+                    content += '• Lyrics are not available in the database\n';
+                    content += '• The lyrics API is temporarily unavailable\n';
+                    content += '• This is a very new or obscure song';
+                }
+                
+                // Update modal
+                document.getElementById('lyricsTitle').textContent = title;
+                document.getElementById('lyricsContent').textContent = content;
+                document.getElementById('lyricsModal').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Lyrics fetch error:', error);
+                
+                // Show user-friendly error message
+                document.getElementById('lyricsTitle').textContent = 'Error Loading Lyrics';
+                document.getElementById('lyricsContent').textContent = 
+                    `Sorry, we couldn't load the lyrics right now.\n\nError: ${error.message}\n\nPlease try again later.`;
+                document.getElementById('lyricsModal').style.display = 'block';
+            }
+        }
+
+        // Refresh lyrics
+        async function refreshLyrics(songId) {
+            if (!songId) {
+                alert('No song selected');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/dj/refresh-lyrics/${songId}`, {
+                    method: 'POST'
+                });
+                const data = await response.json();
+                
+                if (response.ok) {
+                    alert(`✅ ${data.message}\nLyrics available: ${data.lyrics_available ? 'Yes' : 'No'}\nClean: ${data.is_clean ? 'Yes' : 'No'}`);
+                    // Reload the lyrics
+                    viewLyrics(songId);
+                } else {
+                    alert(`❌ Error: ${data.error}`);
+                }
+            } catch (error) {
+                alert(`❌ Network error: ${error}`);
+            }
+        }
+
+        // Close lyrics modal
+        function closeLyrics() {
+            document.getElementById('lyricsModal').style.display = 'none';
+            currentSongId = null;
+        }
+
+        // Load requests when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadRequests();
+        });
+    </script>
+
+    <!-- Add Font Awesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</body>
+</html>

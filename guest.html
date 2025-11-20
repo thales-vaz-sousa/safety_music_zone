@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Safety Music Zone - Request Songs</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-dark: #4f46e5;
+            --success: #10b981;
+            --danger: #ef4444;
+            --warning: #f59e0b;
+            --dark: #1f2937;
+            --light: #f8fafc;
+            --gray: #6b7280;
+            --card-bg: rgba(255, 255, 255, 0.95);
+            --blur-bg: rgba(255, 255, 255, 0.1);
+            --shadow: 0 10px 25px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: var(--dark);
+        }
+
+        .app-container {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 2rem;
+            color: white;
+        }
+
+        .logo {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 0.9rem;
+        }
+
+        .card {
+            background: var(--card-bg);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            box-shadow: var(--shadow);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .search-container {
+            position: relative;
+            margin-bottom: 1rem;
+        }
+
+        .search-input {
+            width: 100%;
+            padding: 1rem 1rem 1rem 3rem;
+            border: none;
+            border-radius: 50px;
+            background: var(--light);
+            font-size: 1rem;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            box-shadow: 0 4px 20px rgba(99, 102, 241, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .search-icon {
+            position: absolute;
+            left: 1rem;
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--gray);
+        }
+
+        .btn {
+            padding: 1rem 2rem;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.6);
+        }
+
+        .btn-success {
+            background: var(--success);
+            color: white;
+        }
+
+        .btn-full {
+            width: 100%;
+        }
+
+        .song-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.75rem;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+
+        .song-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+        }
+
+        .song-item:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            border-color: var(--primary);
+        }
+
+        .song-art {
+            width: 50px;
+            height: 50px;
+            border-radius: 10px;
+            margin-right: 1rem;
+            object-fit: cover;
+        }
+
+        .song-info {
+            flex: 1;
+        }
+
+        .song-title {
+            font-weight: 600;
+            margin-bottom: 0.25rem;
+            color: var(--dark);
+        }
+
+        .song-artist {
+            font-size: 0.85rem;
+            color: var(--gray);
+        }
+
+        .explicit-badge {
+            background: var(--danger);
+            color: white;
+            padding: 0.25rem 0.5rem;
+            border-radius: 20px;
+            font-size: 0.7rem;
+            font-weight: 600;
+            margin-left: 0.5rem;
+        }
+
+        .request-status {
+            text-align: center;
+            padding: 1rem;
+            border-radius: 15px;
+            margin: 1rem 0;
+            animation: slideIn 0.5s ease;
+        }
+
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .status-success {
+            background: rgba(16, 185, 129, 0.1);
+            border: 2px solid var(--success);
+            color: var(--success);
+        }
+
+        .status-error {
+            background: rgba(239, 68, 68, 0.1);
+            border: 2px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .status-pending {
+            background: rgba(245, 158, 11, 0.1);
+            border: 2px solid var(--warning);
+            color: var(--warning);
+        }
+
+        .tabs {
+            display: flex;
+            background: var(--light);
+            border-radius: 50px;
+            padding: 0.25rem;
+            margin-bottom: 1rem;
+        }
+
+        .tab {
+            flex: 1;
+            padding: 0.75rem;
+            text-align: center;
+            border-radius: 50px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+
+        .tab.active {
+            background: var(--primary);
+            color: white;
+            box-shadow: 0 2px 10px rgba(99, 102, 241, 0.3);
+        }
+
+        .queue-item {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            background: var(--light);
+            border-radius: 15px;
+            margin-bottom: 0.75rem;
+            animation: slideIn 0.5s ease;
+        }
+
+        .queue-status {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 1rem;
+        }
+
+        .status-approved { background: var(--success); }
+        .status-pending { background: var(--warning); }
+        .status-rejected { background: var(--danger); }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ffffff;
+            border-radius: 50%;
+            border-top-color: transparent;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 2rem;
+            color: var(--gray);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.5;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 480px) {
+            body {
+                padding: 15px;
+            }
+            
+            .card {
+                padding: 1.25rem;
+            }
+            
+            .header h1 {
+                font-size: 1.5rem;
+            }
+        }
+
+        /* Custom scrollbar */
+        .song-list::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .song-list::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .song-list::-webkit-scrollbar-thumb {
+            background: var(--primary);
+            border-radius: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">
+                <i class="fas fa-music"></i>
+            </div>
+            <h1>Safety Music Zone</h1>
+            <p>Request songs for the party! 🎉</p>
+        </div>
+
+        <!-- Main Card -->
+        <div class="card">
+            <!-- Tabs -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('search')">
+                    <i class="fas fa-search"></i> Search
+                </div>
+                <div class="tab" onclick="switchTab('queue')">
+                    <i class="fas fa-list"></i> Queue
+                </div>
+            </div>
+
+            <!-- Search Tab -->
+            <div id="search-tab">
+                <div class="search-container">
+                    <i class="fas fa-search search-icon"></i>
+                    <input type="text" class="search-input" id="searchInput" 
+                           placeholder="Search for songs..." onkeypress="handleSearchKeypress(event)">
+                </div>
+                
+                <button class="btn btn-primary btn-full" onclick="searchSongs()" id="searchBtn">
+                    <i class="fas fa-search"></i> Search Songs
+                </button>
+
+                <!-- Search Results -->
+                <div id="searchResults" class="song-list" style="margin-top: 1rem;"></div>
+            </div>
+
+            <!-- Queue Tab -->
+            <div id="queue-tab" style="display: none;">
+                <h3 style="margin-bottom: 1rem; text-align: center;">Request Queue</h3>
+                <div id="queueList" class="song-list"></div>
+            </div>
+        </div>
+
+        <!-- Request Status -->
+        <div id="requestStatus"></div>
+    </div>
+
+    <script>
+        let currentTab = 'search';
+        let currentSearchResults = [];
+
+        // Tab switching
+        function switchTab(tabName) {
+            currentTab = tabName;
+            
+            // Update tabs
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            event.target.classList.add('active');
+            
+            // Show/hide content
+            document.getElementById('search-tab').style.display = tabName === 'search' ? 'block' : 'none';
+            document.getElementById('queue-tab').style.display = tabName === 'queue' ? 'block' : 'none';
+            
+            if (tabName === 'queue') {
+                loadQueue();
+            }
+        }
+
+        // Handle Enter key in search
+        function handleSearchKeypress(event) {
+            if (event.key === 'Enter') {
+                searchSongs();
+            }
+        }
+
+        // Search songs
+        async function searchSongs() {
+            const query = document.getElementById('searchInput').value.trim();
+            const resultsDiv = document.getElementById('searchResults');
+            const searchBtn = document.getElementById('searchBtn');
+            
+            if (!query) {
+                showStatus('Please enter a song name to search', 'error');
+                return;
+            }
+
+            // Show loading state
+            searchBtn.innerHTML = '<div class="loading"></div> Searching...';
+            searchBtn.disabled = true;
+            resultsDiv.innerHTML = '';
+
+            try {
+                const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+                const data = await response.json();
+                
+                if (data.tracks && data.tracks.length > 0) {
+                    currentSearchResults = data.tracks;
+                    let html = '';
+                    
+                    data.tracks.forEach(track => {
+                        const explicitBadge = track.explicit ? '<span class="explicit-badge">E</span>' : '';
+                        const imageUrl = track.image_url || 'https://via.placeholder.com/50x50/6366f1/ffffff?text=🎵';
+                        
+                        html += `
+                            <div class="song-item" onclick="requestSong('${track.spotify_id}')">
+                                <img src="${imageUrl}" alt="${track.title}" class="song-art">
+                                <div class="song-info">
+                                    <div class="song-title">${track.title} ${explicitBadge}</div>
+                                    <div class="song-artist">${track.artist}</div>
+                                </div>
+                                <i class="fas fa-plus" style="color: var(--primary);"></i>
+                            </div>
+                        `;
+                    });
+                    
+                    resultsDiv.innerHTML = html;
+                    showStatus(`Found ${data.tracks.length} songs! Tap to request.`, 'success');
+                } else {
+                    resultsDiv.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-music"></i>
+                            <p>No songs found. Try a different search.</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                resultsDiv.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Search failed. Please try again.</p>
+                    </div>
+                `;
+                showStatus('Search failed. Please check your connection.', 'error');
+            } finally {
+                // Reset button
+                searchBtn.innerHTML = '<i class="fas fa-search"></i> Search Songs';
+                searchBtn.disabled = false;
+            }
+        }
+
+        // Request a song
+        async function requestSong(spotifyId) {
+            const statusDiv = document.getElementById('requestStatus');
+            
+            try {
+                showStatus('Submitting your request...', 'pending');
+                
+                const response = await fetch('/request-song', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ spotify_id: spotifyId })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showStatus(`🎉 Success! "${data.song_title}" requested!`, 'success');
+                    
+                    // Clear search results
+                    document.getElementById('searchResults').innerHTML = '';
+                    document.getElementById('searchInput').value = '';
+                    
+                    // Switch to queue tab after a delay
+                    setTimeout(() => {
+                        switchTab('queue');
+                    }, 2000);
+                } else {
+                    showStatus(`❌ ${data.error}`, 'error');
+                    if (data.reasons) {
+                        showStatus(`Reasons: ${data.reasons.join(', ')}`, 'error');
+                    }
+                }
+            } catch (error) {
+                showStatus('❌ Network error. Please try again.', 'error');
+            }
+        }
+
+        // Load queue
+        async function loadQueue() {
+            const queueList = document.getElementById('queueList');
+            
+            try {
+                const response = await fetch('/dj/requests');
+                const data = await response.json();
+                
+                if (response.ok && data.length > 0) {
+                    let html = '';
+                    
+                    data.forEach(req => {
+                        let statusClass = 'status-pending';
+                        let statusText = 'Pending';
+                        
+                        if (req.status === 'Approved') {
+                            statusClass = 'status-approved';
+                            statusText = 'Approved';
+                        } else if (req.status === 'Rejected') {
+                            statusClass = 'status-rejected';
+                            statusText = 'Rejected';
+                        }
+                        
+                        html += `
+                            <div class="queue-item">
+                                <div class="queue-status ${statusClass}"></div>
+                                <div style="flex: 1;">
+                                    <div class="song-title">${req.song_title}</div>
+                                    <div class="song-artist">${req.artist}</div>
+                                </div>
+                                <div style="font-size: 0.8rem; color: var(--gray);">
+                                    ${statusText}
+                                </div>
+                            </div>
+                        `;
+                    });
+                    
+                    queueList.innerHTML = html;
+                } else {
+                    queueList.innerHTML = `
+                        <div class="empty-state">
+                            <i class="fas fa-inbox"></i>
+                            <p>No requests yet</p>
+                            <p style="font-size: 0.9rem; margin-top: 0.5rem;">Be the first to request a song!</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                queueList.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <p>Failed to load queue</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Show status message
+        function showStatus(message, type) {
+            const statusDiv = document.getElementById('requestStatus');
+            statusDiv.className = `request-status status-${type}`;
+            statusDiv.innerHTML = message;
+            statusDiv.style.display = 'block';
+            
+            // Auto-hide success messages after 5 seconds
+            if (type === 'success') {
+                setTimeout(() => {
+                    statusDiv.style.display = 'none';
+                }, 5000);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            // Add some sample songs for demo
+            const sampleSongs = [
+                "Shape of You", "Blinding Lights", "Happy", "Dance Monkey"
+            ];
+            
+            document.getElementById('searchInput').placeholder = `Try "${sampleSongs[Math.floor(Math.random() * sampleSongs.length)]}"...`;
+        });
+    </script>
+</body>
+</html>
