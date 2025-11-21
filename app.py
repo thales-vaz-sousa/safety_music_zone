@@ -1315,19 +1315,14 @@ def override_lyrics_check(request_id):
 
 @app.route('/guest-stats')
 def guest_stats():
-    """Get guest statistics"""
-    try:
-        total_requests = Request.query.count()
-        pending_requests = Request.query.filter_by(status='Pending').count()
-        unique_guests = db.session.query(Request.user_id).distinct().count()
-        
-        return jsonify({
-            'total_requests': total_requests,
-            'pending_requests': pending_requests,
-            'unique_guests': unique_guests
-        })
-    except Exception as e:
-        return jsonify({"error": str(e)}), 500
+    total_requests = Request.query.count()
+    unique_guests = db.session.query(Request.guest_id).distinct().count()
+
+    return jsonify({
+        "total_requests": total_requests,
+        "unique_guests": unique_guests
+    })
+
 
 @app.route('/popular-songs')
 def popular_songs():
@@ -1370,7 +1365,6 @@ def guest_search():
     if not query:
         return jsonify({"error": "query required"}), 400
 
-    # token do Client Credentials
     token = get_app_spotify_token()
     if not token:
         return jsonify({"error": "spotify token unavailable"}), 500
@@ -1380,25 +1374,71 @@ def guest_search():
     params = {"q": query, "type": "track", "limit": 10}
 
     resp = requests.get(url, headers=headers, params=params)
-    return jsonify(resp.json())
+    raw = resp.json()
+
+    results = []
+    if "tracks" in raw and "items" in raw["tracks"]:
+        for t in raw["tracks"]["items"]:
+            results.append({
+                "spotify_id": t["id"],
+                "title": t["name"],
+                "artist": ", ".join(a["name"] for a in t["artists"]),
+                "image_url": t["album"]["images"][0]["url"] if t["album"]["images"] else None,
+                "explicit": t.get("explicit", False)
+            })
+
+    return jsonify({"tracks": results})
+
 
 @app.route('/guest-approved', methods=['GET'])
 def guest_approved():
-    approved = Request.query.filter_by(status='Approved').all()
+    guest_id = request.args.get("guest_id")
 
+    approved = Request.query.filter_by(status="Approved").all()
     output = []
+
     for req in approved:
         output.append({
-            "request_id": req.id,
             "song_id": req.song_id,
             "title": req.song.title,
             "artist": req.song.artist,
             "image_url": req.song.image_url,
-            "explicit": req.song.explicit
+            "request_count": req.song.request_count,
+            "like_count": req.song.like_count,
+            "user_liked": Likes.query.filter_by(song_id=req.song_id, guest_id=guest_id).first() is not None
         })
 
     return jsonify(output)
 
+@app.route('/guest-queue', methods=['GET'])
+def guest_queue():
+    guest_id = request.args.get("guest_id")
+
+    reqs = Request.query.order_by(Request.timestamp.desc()).all()
+    output = []
+
+    for r in reqs:
+        output.append({
+            "song_title": r.song.title,
+            "artist": r.song.artist,
+            "status": r.status,
+            "requested_by": r.guest_id
+        })
+
+    return jsonify(output)
+
+@app.route('/guest-popular', methods=['GET'])
+def guest_popular():
+    songs = Song.query.order_by(Song.request_count.desc()).limit(15).all()
+
+    return jsonify([
+        {
+            "title": s.title,
+            "artist": s.artist,
+            "request_count": s.request_count
+        }
+        for s in songs
+    ])
 
 
 @app.route('/health')
