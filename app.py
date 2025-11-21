@@ -401,11 +401,11 @@ def get_track_details(track_id):
 # ----------------------
 # Routes
 # ----------------------
-@app.route('${BASE_URL}/')
+@app.route('/')
 def home():
     return "Welcome to Safety Music Zone! Use /login to authenticate with Spotify."
 
-@app.route('${BASE_URL}/test-form')
+@app.route('/test-form')
 def test_form():
     """Serve the test form"""
     try:
@@ -414,7 +414,7 @@ def test_form():
     except FileNotFoundError:
         return "test.html file not found. Please create the file in your project folder.", 404
 
-@app.route('${BASE_URL}/login')
+@app.route('/login')
 def login():
     params = {
         'client_id': CLIENT_ID,
@@ -425,7 +425,7 @@ def login():
     url = f"{SPOTIFY_AUTH_URL}?{urllib.parse.urlencode(params)}"
     return redirect(url)
 
-@app.route('${BASE_URL}/callback')
+@app.route('/callback')
 def callback():
     code = request.args.get('code')
     if not code:
@@ -452,7 +452,7 @@ def callback():
     else:
         return jsonify(token_info), 400
 
-@app.route('${BASE_URL}/search', methods=['GET'])
+@app.route('/search', methods=['GET'])
 def search_song():
     query = request.args.get('query')
     if not query:
@@ -477,7 +477,7 @@ def search_song():
     
     return jsonify(data)
 
-@app.route('${BASE_URL}/request-song', methods=['POST'])
+@app.route('/request-song', methods=['POST'])
 def request_song():
     """Submit a song request"""
     try:
@@ -623,7 +623,7 @@ def request_song():
 # ----------------------
 # New Lyrics Testing Routes
 # ----------------------
-@app.route('${BASE_URL}/test-lyrics-apis')
+@app.route('/test-lyrics-apis')
 def test_lyrics_apis_route():
     """Test all lyrics APIs with popular songs"""
     test_songs = [
@@ -733,7 +733,7 @@ def get_lyrics(artist, title):
     
     return best_lyrics
 
-@app.route('${BASE_URL}/dj/manual-lyrics/<int:song_id>', methods=['POST'])
+@app.route('/dj/manual-lyrics/<int:song_id>', methods=['POST'])
 def manual_lyrics_input(song_id):
     """Allow DJ to manually input lyrics when APIs fail"""
     try:
@@ -790,7 +790,7 @@ def parse_genius_lyrics(data, artist, title):
     except:
         return ""
 
-@app.route('${BASE_URL}/lyrics-cache-info')
+@app.route('/lyrics-cache-info')
 def lyrics_cache_info():
     """Get info about cached lyrics"""
     cache = load_lyrics_cache()
@@ -799,7 +799,7 @@ def lyrics_cache_info():
         "cached_songs": list(cache.keys())[:10]  # First 10
     })
 
-@app.route('${BASE_URL}/lyrics-summary')
+@app.route('/lyrics-summary')
 def lyrics_summary():
     """Show which APIs are working best"""
     return jsonify({
@@ -828,7 +828,7 @@ def lyrics_summary():
         "recommendation": "Use Lyrics.ovh as primary, LRCLIB as fallback"
     })
 
-@app.route('${BASE_URL}/quick-test/<artist>/<title>')
+@app.route('/quick-test/<artist>/<title>')
 def quick_test(artist, title):
     """Quick test of lyrics for a specific song"""
     lyrics = get_lyrics(artist, title)
@@ -960,7 +960,7 @@ def get_lyrics_working(artist, title):
 # ----------------------
 # Existing Routes (Updated)
 # ----------------------
-@app.route('${BASE_URL}/approved-songs')
+@app.route('/approved-songs')
 def approved_songs():
     """Get all approved songs with like counts - NO DUPLICATES"""
     try:
@@ -1009,7 +1009,7 @@ def approved_songs():
         print(f"DEBUG: Error in approved-songs: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-@app.route('${BASE_URL}/toggle-like', methods=['POST'])
+@app.route('/toggle-like', methods=['POST'])
 def toggle_like():
     """Toggle like on a song"""
     try:
@@ -1048,7 +1048,7 @@ def toggle_like():
         db.session.rollback()
         return jsonify({"error": str(e)}), 500
 
-@app.route('${BASE_URL}/dj/requests')
+@app.route('/dj/requests')
 def dj_requests():
     """DJ view of all pending requests - FIXED with images"""
     try:
@@ -1086,7 +1086,7 @@ def dj_requests():
     except Exception as e:
         return jsonify({"error": f"Failed to fetch requests: {str(e)}"}), 500
 
-@app.route('${BASE_URL}/dj/approve/<int:request_id>', methods=['POST'])
+@app.route('/dj/approve/<int:request_id>', methods=['POST'])
 def approve_request(request_id):
     """Approve a song request"""
     try:
@@ -1105,7 +1105,7 @@ def approve_request(request_id):
         db.session.rollback()
         return jsonify({"error": f"Failed to approve request: {str(e)}"}), 500
 
-@app.route('${BASE_URL}/dj/reject/<int:request_id>', methods=['POST'])
+@app.route('/dj/reject/<int:request_id>', methods=['POST'])
 def reject_request(request_id):
     """Reject a song request"""
     try:
@@ -1128,7 +1128,7 @@ def reject_request(request_id):
 # DJ Lyrics Routes (Add these to your app.py)
 # ----------------------
 
-@app.route('${BASE_URL}/dj/lyrics/<int:song_id>')
+@app.route('/dj/lyrics/<int:song_id>')
 def get_lyrics_for_song(song_id):
     """Get lyrics for a specific song"""
     try:
@@ -1167,7 +1167,7 @@ def get_lyrics_for_song(song_id):
             "song_id": song_id
         }), 500
 
-@app.route('${BASE_URL}/dj/refresh-lyrics/<int:song_id>', methods=['POST'])
+@app.route('/dj/refresh-lyrics/<int:song_id>', methods=['POST'])
 def refresh_lyrics(song_id):
     """Manually refresh lyrics for a song"""
     try:
@@ -1205,7 +1205,7 @@ def refresh_lyrics(song_id):
         db.session.rollback()
         return jsonify({"error": f"Failed to refresh lyrics: {str(e)}"}), 500
 
-@app.route('${BASE_URL}/dj/override/<int:request_id>', methods=['POST'])
+@app.route('/dj/override/<int:request_id>', methods=['POST'])
 def override_lyrics_check(request_id):
     """Allow DJ to manually override lyrics check and approve song"""
     try:
@@ -1235,7 +1235,7 @@ def override_lyrics_check(request_id):
         db.session.rollback()
         return jsonify({"error": f"Failed to override request: {str(e)}"}), 500
 
-@app.route('${BASE_URL}/guest-stats')
+@app.route('/guest-stats')
 def guest_stats():
     """Get guest statistics"""
     try:
@@ -1251,7 +1251,7 @@ def guest_stats():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('${BASE_URL}/popular-songs')
+@app.route('/popular-songs')
 def popular_songs():
     """Get most requested songs"""
     try:
@@ -1276,7 +1276,7 @@ def popular_songs():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
-@app.route('${BASE_URL}/guest')
+@app.route('/guest')
 def guest_interface():
     """Serve the mobile-friendly guest interface"""
     try:
@@ -1285,7 +1285,7 @@ def guest_interface():
     except FileNotFoundError:
         return "guest.html file not found", 404
 
-@app.route('${BASE_URL}/debug-auth')
+@app.route('/debug-auth')
 def debug_auth():
     """Debug authentication status"""
     return jsonify({
@@ -1294,7 +1294,7 @@ def debug_auth():
         "token_exists": bool(session.get('spotify_token'))
     })
 
-@app.route('${BASE_URL}/debug-lyrics/<artist>/<title>')
+@app.route('/debug-lyrics/<artist>/<title>')
 def debug_lyrics(artist, title):
     """Debug lyrics fetching for a specific song"""
     print(f"🔍 Debugging lyrics for: {artist} - {title}")

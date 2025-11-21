@@ -794,6 +794,7 @@
     </div>
 
     <script>
+        const BASE_URL = window.location.origin;
 
         document.addEventListener("DOMContentLoaded", () => {
             const lang = localStorage.getItem("language") || "en";
@@ -979,7 +980,7 @@
         async function loadApprovedSongs() {
             try {
                 const guestId = getGuestId();
-                const response = await fetch(`/approved-songs?guest_id=${guestId}`);
+                const response = await fetch(`${BASE_URL}/approved-songs?guest_id=${guestId}`);
                 const data = await response.json();
                 
                 const approvedSongsDiv = document.getElementById('approvedSongs');
@@ -1035,7 +1036,7 @@
         // Toggle like on approved song
         async function toggleLike(songId) {
             try {
-                const response = await fetch('/toggle-like', {
+                const response = await fetch('${BASE_URL}/toggle-like', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1136,7 +1137,7 @@
                 showStatus('Submitting your request...', 'pending');
                 lastRequestTime = now;
                 
-                const response = await fetch('/request-song', {
+                const response = await fetch('${BASE_URL}/request-song', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1177,7 +1178,7 @@
             const queueList = document.getElementById('queueList');
             
             try {
-                const response = await fetch('/dj/requests');
+                const response = await fetch('${BASE_URL}/dj/requests');
                 const data = await response.json();
                 
                 if (response.ok && data.length > 0) {
@@ -1234,7 +1235,7 @@
         // Load popular songs
         async function loadPopularSongs() {
             try {
-                const response = await fetch('/popular-songs');
+                const response = await fetch('${BASE_URL}/popular-songs');
                 const data = await response.json();
                 
                 let html = '';
@@ -1275,7 +1276,7 @@
         // Load party statistics
         async function loadPartyStats() {
             try {
-                const response = await fetch('/guest-stats');
+                const response = await fetch('${BASE_URL}/guest-stats');
                 const data = await response.json();
                 
                 if (response.ok) {

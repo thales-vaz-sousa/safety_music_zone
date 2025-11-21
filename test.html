@@ -666,7 +666,7 @@
         // Update dashboard statistics
         async function updateStats() {
             try {
-                const response = await fetch('/guest-stats');
+                const response = await fetch('${BASE_URL}/guest-stats');
                 const data = await response.json();
                 
                 if (response.ok) {
@@ -695,7 +695,7 @@
             requestsDiv.innerHTML = '<div class="info"><i class="fas fa-spinner fa-spin"></i> Loading requests...</div>';
             
             try {
-                const response = await fetch('/dj/requests');
+                const response = await fetch('${BASE_URL}/dj/requests');
                 const data = await response.json();
                 
                 if (response.ok) {
@@ -769,7 +769,7 @@
         // Get song_id from request_id and view lyrics
         async function getSongIdAndViewLyrics(requestId) {
             try {
-                const response = await fetch('/dj/requests');
+                const response = await fetch('${BASE_URL}/dj/requests');
                 const requests = await response.json();
                 
                 if (response.ok) {
@@ -996,7 +996,7 @@
             }
 
             try {
-                const response = await fetch('/request-song', {
+                const response = await fetch('${BASE_URL}/request-song', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
