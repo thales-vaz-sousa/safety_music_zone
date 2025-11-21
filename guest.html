@@ -903,7 +903,8 @@
 
         // Initialize WebSocket connection
         function initSocket() {
-            socket = io();
+            socket = io(BASE_URL);
+
             
             socket.on('connect', () => {
                 console.log('Connected to server');

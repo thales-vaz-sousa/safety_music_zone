@@ -627,7 +627,8 @@
 
         // Initialize WebSocket connection
         function initSocket() {
-            socket = io();
+            socket = io(BASE_URL);
+
             
             socket.on('connect', () => {
                 console.log('Connected to server');
@@ -673,7 +674,7 @@
                     document.getElementById('pendingRequestsStat').textContent = data.pending_requests || 0;
                     
                     // Get approved songs count
-                    const approvedResponse = await fetch('/approved-songs');
+                    const approvedResponse = await fetch('${BASE_URL}/approved-songs');
                     const approvedData = await approvedResponse.json();
                     if (approvedResponse.ok) {
                         document.getElementById('approvedSongsStat').textContent = approvedData.length || 0;
