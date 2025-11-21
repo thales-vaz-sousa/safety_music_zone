@@ -1065,8 +1065,8 @@ def dj_requests():
             User, Request.user_id == User.id
         ).outerjoin(
             LyricsCheck, Song.id == LyricsCheck.song_id
-        ).filter(
-            Request.status == 'Pending'
+        )..filter(
+            Request.status.in_(['Pending', 'Rejected', 'Approved'])
         ).all()
         
         requests_data = []
