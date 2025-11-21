@@ -675,13 +675,13 @@
         <div class="card">
             <!-- Tabs -->
             <div class="tabs">
-                <div class="tab active" onclick="switchTab('search')">
+                <div class="tab active" onclick="switchTab('search', event)">
                     <i class="fas fa-search"></i> Search
                 </div>
-                <div class="tab" onclick="switchTab('queue')">
+                <div class="tab" onclick="switchTab('queue', event)">
                     <i class="fas fa-list"></i> Queue
                 </div>
-                <div class="tab" onclick="switchTab('popular')">
+                <div class="tab" onclick="switchTab('popular', event)">
                     <i class="fas fa-chart-bar"></i> Popular
                 </div>
             </div>
@@ -961,26 +961,36 @@
         }
 
         // Tab switching
-        function switchTab(tabName) {
+        function switchTab(tabName, evt) {
             currentTab = tabName;
-            
-            // Update tabs
+
+            // Remove active de todas as tabs
             document.querySelectorAll('.tab').forEach(tab => {
                 tab.classList.remove('active');
             });
-            event.target.classList.add('active');
-            
+
+            // Se o evento foi passado, usa o alvo (mais confiável)
+            if (evt && evt.currentTarget) {
+                evt.currentTarget.classList.add('active');
+            } else {
+                // fallback: ativa a tab por texto (caso o HTML não tenha sido atualizado)
+                const tabs = Array.from(document.querySelectorAll('.tab'));
+                const found = tabs.find(t => t.textContent.toLowerCase().includes(tabName));
+                if (found) found.classList.add('active');
+            }
+
             // Show/hide content
             document.getElementById('search-tab').style.display = tabName === 'search' ? 'block' : 'none';
             document.getElementById('queue-tab').style.display = tabName === 'queue' ? 'block' : 'none';
             document.getElementById('popular-tab').style.display = tabName === 'popular' ? 'block' : 'none';
-            
+
             if (tabName === 'queue') {
                 loadQueue();
             } else if (tabName === 'popular') {
                 loadPopularSongs();
             }
         }
+
 
         // Handle Enter key in search
         function handleSearchKeypress(event) {
@@ -1091,7 +1101,7 @@
             resultsDiv.innerHTML = '';
 
             try {
-                const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+                const response = await fetch(BASE_URL +'/guest-search?query=${encodeURIComponent(query)}`)
                 const data = await response.json();
                 
                 if (data.tracks && data.tracks.length > 0) {

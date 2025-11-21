@@ -401,6 +401,24 @@ def get_track_details(track_id):
         return response.json()
     return None
 
+# helper: get app access token (client credentials)
+def get_app_spotify_token():
+    # opcional: cache token in memory with expiration
+    token_info = session.get('app_spotify_token_info')
+    if token_info and token_info.get('expires_at', 0) > time.time():
+        return token_info['access_token']
+    data = {
+        'grant_type': 'client_credentials'
+    }
+    auth_header = base64.b64encode(f"{CLIENT_ID}:{CLIENT_SECRET}".encode()).decode()
+    headers = {"Authorization": f"Basic {auth_header}"}
+    resp = requests.post(SPOTIFY_TOKEN_URL, data=data, headers=headers)
+    info = resp.json()
+    if resp.status_code == 200 and 'access_token' in info:
+        info['expires_at'] = time.time() + info.get('expires_in', 3600) - 10
+        session['app_spotify_token_info'] = info
+        return info['access_token']
+    return None
 
 # ----------------------
 # Error Handling Utilities
@@ -1338,18 +1356,30 @@ def popular_songs():
 
 @app.route('/guest')
 def guest_interface():
-    """Serve the mobile-friendly guest interface with auto-auth"""
-    # Check if user has Spotify token
-    if 'spotify_token' not in session:
-        # Store the intended destination
-        session['return_to'] = '/guest'
-        return redirect('/login')
-    
+    """Serve the mobile-friendly guest interface without forcing Spotify login"""
     try:
         with open('guest.html', 'r', encoding='utf-8') as file:
             return file.read()
     except FileNotFoundError:
         return "guest.html file not found", 404
+
+@app.route('/guest-search', methods=['GET'])
+def guest_search():
+    query = request.args.get('query')
+    if not query:
+        return jsonify({"error": "query required"}), 400
+
+    token = get_app_spotify_token()
+    if not token:
+        return jsonify({"error": "spotify token unavailable"}), 500
+
+    url = f"{SPOTIFY_API_URL}/search"
+    headers = {"Authorization": f"Bearer {token}"}
+    params = {"q": query, "type": "track", "limit": 8}
+
+    resp = requests.get(url, headers=headers, params=params)
+    return jsonify(resp.json()), resp.status_code
+
 
 @app.route('/health')
 def health_check():
