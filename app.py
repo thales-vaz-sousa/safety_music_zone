@@ -1363,22 +1363,42 @@ def guest_interface():
     except FileNotFoundError:
         return "guest.html file not found", 404
 
+
 @app.route('/guest-search', methods=['GET'])
 def guest_search():
     query = request.args.get('query')
     if not query:
         return jsonify({"error": "query required"}), 400
 
+    # token do Client Credentials
     token = get_app_spotify_token()
     if not token:
         return jsonify({"error": "spotify token unavailable"}), 500
 
     url = f"{SPOTIFY_API_URL}/search"
     headers = {"Authorization": f"Bearer {token}"}
-    params = {"q": query, "type": "track", "limit": 8}
+    params = {"q": query, "type": "track", "limit": 10}
 
     resp = requests.get(url, headers=headers, params=params)
-    return jsonify(resp.json()), resp.status_code
+    return jsonify(resp.json())
+
+@app.route('/guest-approved', methods=['GET'])
+def guest_approved():
+    approved = Request.query.filter_by(status='Approved').all()
+
+    output = []
+    for req in approved:
+        output.append({
+            "request_id": req.id,
+            "song_id": req.song_id,
+            "title": req.song.title,
+            "artist": req.song.artist,
+            "image_url": req.song.image_url,
+            "explicit": req.song.explicit
+        })
+
+    return jsonify(output)
+
 
 
 @app.route('/health')

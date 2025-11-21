@@ -1000,13 +1000,13 @@
         }
 
         // Add this line at the beginning of your script in test.html
-        const BASE_URL = "https://safetymusiczone-production.up.railway.app";
+        //const BASE_URL = "https://safetymusiczone-production.up.railway.app";
 
         // Load approved songs with likes - UPDATED VERSION
         async function loadApprovedSongs() {
             try {
                 const guestId = getGuestId();
-                const response = await fetch(BASE_URL + '/approved-songs?guest_id=' + guestId);
+                const response = await fetch(`${BASE_URL}/guest-approved?guest_id=${guestId}`);
                 const data = await response.json();
                 
                 const approvedSongsDiv = document.getElementById('approvedSongs');
@@ -1101,7 +1101,7 @@
             resultsDiv.innerHTML = '';
 
             try {
-                const response = await fetch(BASE_URL +'/guest-search?query=${encodeURIComponent(query)}`)
+                const response = await fetch(`${BASE_URL}/guest-search?query=${encodeURIComponent(query)}`)
                 const data = await response.json();
                 
                 if (data.tracks && data.tracks.length > 0) {
@@ -1204,7 +1204,7 @@
             const queueList = document.getElementById('queueList');
             
             try {
-                const response = await fetch(BASE_URL + '/dj/requests');
+                const response = await fetch(`${BASE_URL}/guest-queue?guest_id=${getGuestId()}`);
                 const data = await response.json();
                 
                 if (response.ok && data.length > 0) {
@@ -1261,7 +1261,7 @@
         // Load popular songs
         async function loadPopularSongs() {
             try {
-                const response = await fetch(BASE_URL + '/popular-songs');
+                const response = await fetch(`${BASE_URL}/guest-popular`);
                 const data = await response.json();
                 
                 let html = '';
