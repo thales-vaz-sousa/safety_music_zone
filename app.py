@@ -453,9 +453,13 @@ def callback():
 
     if 'access_token' in token_info:
         session['spotify_token'] = token_info['access_token']
-        return 'Spotify authentication successful! You can now use the app.'
+        
+        # Redirect back to intended page
+        return_to = session.pop('return_to', '/')
+        return redirect(return_to)
     else:
         return jsonify(token_info), 400
+
 
 @app.route('/search', methods=['GET'])
 def search_song():
@@ -1283,12 +1287,19 @@ def popular_songs():
 
 @app.route('/guest')
 def guest_interface():
-    """Serve the mobile-friendly guest interface"""
+    """Serve the mobile-friendly guest interface with auto-auth"""
+    # Check if user has Spotify token
+    if 'spotify_token' not in session:
+        # Store the intended destination
+        session['return_to'] = '/guest'
+        return redirect('/login')
+    
     try:
         with open('guest.html', 'r', encoding='utf-8') as file:
             return file.read()
     except FileNotFoundError:
         return "guest.html file not found", 404
+
 
 @app.route('/debug-auth')
 def debug_auth():

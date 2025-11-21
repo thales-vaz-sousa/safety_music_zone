@@ -789,6 +789,14 @@
                 </button>
             </div>
         </div>
+
+        <!-- Connection Status Indicator -->
+        <div id="connectionStatus" style="position: fixed; top: 10px; right: 10px; z-index: 1000; display: none;">
+            <div style="display: flex; align-items: center; gap: 0.5rem; background: var(--card-bg); padding: 0.5rem 1rem; border-radius: 20px; border: 1px solid rgba(139, 95, 191, 0.3);">
+                <i class="fas fa-circle" id="statusIcon" style="color: var(--warning);"></i>
+                <span id="statusText" style="font-size: 0.8rem;">Checking connection...</span>
+            </div>
+        </div>
     </div>
     </div>
     </div>
@@ -1463,6 +1471,43 @@
             window.location.href = `mailto:${yourEmail}?subject=${subject}&body=${body}`;
             showToast('Opening email for quick feedback...', 'info');
         }
+
+        // Enhanced connection monitoring
+        async function monitorConnection() {
+            try {
+                const response = await fetch('/debug-auth');
+                const data = await response.json();
+                
+                const statusDiv = document.getElementById('connectionStatus');
+                const icon = document.getElementById('statusIcon');
+                const text = document.getElementById('statusText');
+                
+                if (data.session_token) {
+                    icon.style.color = 'var(--success)';
+                    icon.className = 'fas fa-wifi';
+                    text.textContent = 'Connected to Spotify';
+                    statusDiv.style.display = 'flex';
+                    
+                    // Auto-hide after 3 seconds
+                    setTimeout(() => {
+                        statusDiv.style.display = 'none';
+                    }, 3000);
+                } else {
+                    icon.style.color = 'var(--danger)';
+                    icon.className = 'fas fa-unlink';
+                    text.textContent = 'Not connected to Spotify';
+                    statusDiv.style.display = 'flex';
+                }
+            } catch (error) {
+                console.error('Connection check failed:', error);
+            }
+        }
+
+        // Check connection every 30 seconds
+        setInterval(monitorConnection, 30000);
+
+        // Initial check
+        monitorConnection();
                     
             </script>
 </body>
