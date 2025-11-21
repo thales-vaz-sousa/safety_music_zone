@@ -794,68 +794,46 @@
     </div>
 
     <script>
-
-        document.addEventListener("DOMContentLoaded", () => {
-            const lang = localStorage.getItem("language") || "en";
-            document.getElementById("languageSelector").value = lang;
-            applyTranslations(lang);
-        });
-
-        // =========================
-        // LANGUAGE TRANSLATIONS
-        // =========================
         const translations = {
             en: {
                 subtitle: "Request songs for the party! 🎉",
                 totalRequests: "Total Requests",
                 activeGuests: "Active Guests",
                 approvedSongs: "Approved Songs",
-                search: "Search",
-                queue: "Queue",
-                popular: "Popular",
-                searchPlaceholder: "Try \"Happy\"...",
+                searchPlaceholder: 'Try "Happy"...',
                 searchBtn: "Search Songs",
-                requestQueue: "Request Queue",
-                mostRequested: "Most Requested",
+                queueTitle: "Request Queue",
+                popularTitle: "Most Requested"
             },
             pt: {
                 subtitle: "Peça músicas para a festa! 🎉",
                 totalRequests: "Total de Pedidos",
                 activeGuests: "Convidados Ativos",
                 approvedSongs: "Músicas Aprovadas",
-                search: "Buscar",
-                queue: "Fila",
-                popular: "Populares",
-                searchPlaceholder: "Tente \"Aquarela\"...",
-                searchBtn: "Buscar Músicas",
-                requestQueue: "Fila de Pedidos",
-                mostRequested: "Mais Pedidas",
+                searchPlaceholder: 'Tente "Happy"...',
+                searchBtn: "Buscar músicas",
+                queueTitle: "Fila de Pedidos",
+                popularTitle: "Mais Pedidas"
             },
             es: {
-                subtitle: "¡Pide canciones para la fiesta! 🎉",
-                totalRequests: "Solicitudes Totales",
-                activeGuests: "Invitados Activos",
-                approvedSongs: "Canciones Aprobadas",
-                search: "Buscar",
-                queue: "Cola",
-                popular: "Populares",
-                searchPlaceholder: "Prueba \"Despacito\"...",
-                searchBtn: "Buscar Canciones",
-                requestQueue: "Cola de Solicitudes",
-                mostRequested: "Más Solicitadas",
+                subtitle: "¡Solicita canciones para la fiesta! 🎉",
+                totalRequests: "Total de solicitudes",
+                activeGuests: "Invitados activos",
+                approvedSongs: "Canciones aprobadas",
+                searchPlaceholder: 'Intenta "Happy"...',
+                searchBtn: "Buscar canciones",
+                queueTitle: "Cola de solicitudes",
+                popularTitle: "Más solicitadas"
             },
             fr: {
                 subtitle: "Demandez des chansons pour la fête ! 🎉",
-                totalRequests: "Demandes Totales",
-                activeGuests: "Invités Actifs",
-                approvedSongs: "Chansons Approuvées",
-                search: "Recherche",
-                queue: "File",
-                popular: "Populaire",
-                searchPlaceholder: "Essayez \"Voyage\"...",
-                searchBtn: "Rechercher des Chansons",
-                requestQueue: "File d’Attente",
-                mostRequested: "Les Plus Demandées",
+                totalRequests: "Demandes totales",
+                activeGuests: "Invités actifs",
+                approvedSongs: "Chansons approuvées",
+                searchPlaceholder: 'Essayez "Happy"...',
+                searchBtn: "Rechercher des chansons",
+                queueTitle: "File d’attente",
+                popularTitle: "Les plus demandées"
             }
         };
 
@@ -864,42 +842,6 @@
         let socket = null;
         let lastRequestTime = 0;
         const REQUEST_COOLDOWN = 10000; // 10 seconds
-
-        function setLanguage(lang) {
-            localStorage.setItem("language", lang);
-            applyTranslations(lang);
-        }
-
-        function applyTranslations(lang) {
-            const t = translations[lang];
-
-            // Header subtitle
-            document.querySelector(".header p").textContent = t.subtitle;
-
-            // Stats
-            document.querySelectorAll(".stat-label")[0].textContent = t.totalRequests;
-            document.querySelectorAll(".stat-label")[1].textContent = t.activeGuests;
-
-            // Approved Songs title
-            document.querySelector("h3 i.fas.fa-check-circle").nextSibling.textContent = " " + t.approvedSongs;
-
-            // Tabs
-            const tabs = document.querySelectorAll(".tab");
-            tabs[0].innerHTML = `<i class="fas fa-search"></i> ${t.search}`;
-            tabs[1].innerHTML = `<i class="fas fa-list"></i> ${t.queue}`;
-            tabs[2].innerHTML = `<i class="fas fa-chart-bar"></i> ${t.popular}`;
-
-            // Search placeholder + button
-            document.getElementById("searchInput").placeholder = t.searchPlaceholder;
-            document.getElementById("searchBtn").innerHTML = `<i class="fas fa-search"></i> ${t.searchBtn}`;
-
-            // Queue header
-            document.querySelector("#queue-tab h3").textContent = t.requestQueue;
-
-            // Popular header
-            document.querySelector("#popular-tab h3").textContent = t.mostRequested;
-        }
-
 
         // Initialize WebSocket connection
         function initSocket() {
@@ -1055,6 +997,36 @@
                 showToast('Network error', 'error');
             }
         }
+        
+        function setLanguage(lang) {
+            localStorage.setItem("lang", lang);
+            applyLanguage(lang);
+        }
+
+        function applyLanguage(lang) {
+            const t = translations[lang];
+
+            // Header
+            document.querySelector('.header p').innerText = t.subtitle;
+
+            // Stats
+            document.querySelectorAll('.stat-label')[0].innerText = t.totalRequests;
+            document.querySelectorAll('.stat-label')[1].innerText = t.activeGuests;
+
+            // Cards & titles
+            document.querySelector('.card h3').innerHTML = `<i class="fas fa-check-circle" style="color: var(--success);"></i> ${t.approvedSongs}`;
+            document.getElementById('searchInput').placeholder = t.searchPlaceholder;
+            document.getElementById('searchBtn').innerHTML = `<i class="fas fa-search"></i> ${t.searchBtn}`;
+            document.querySelector('#queue-tab h3').innerText = t.queueTitle;
+            document.querySelector('#popular-tab h3').innerText = t.popularTitle;
+
+            // Select box sync
+            document.getElementById("languageSelector").value = lang;
+        }
+
+        const savedLang = localStorage.getItem("lang") || "en";
+        applyLanguage(savedLang);
+
 
         // Search songs
         async function searchSongs() {
@@ -1459,6 +1431,14 @@
             showToast('Opening email for quick feedback...', 'info');
         }
                     
+        document.addEventListener('DOMContentLoaded', function() {
+            const savedLang = localStorage.getItem("lang") || "en";
+            applyLanguage(savedLang);
+
+            initSocket();
+            loadPartyStats();
+            loadApprovedSongs();
+
             </script>
 </body>
 </html>
