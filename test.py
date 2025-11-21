@@ -861,7 +861,7 @@ class SpotifyService:
     def __init__(self):
         self.client_id = os.getenv('SPOTIFY_CLIENT_ID')
         self.client_secret = os.getenv('SPOTIFY_CLIENT_SECRET')
-        self.redirect_uri = 'http://127.0.0.1:5000/callback'
+        self.redirect_uri = 'https://safetymusiczone-production.up.railway.app/callback'
         self.api_url = 'https://api.spotify.com/v1'
     
     def get_auth_token(self):

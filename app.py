@@ -22,7 +22,7 @@ CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
 print("CLIENT_ID loaded:", "Yes" if CLIENT_ID else "No")
 print("CLIENT_SECRET loaded:", "Yes" if CLIENT_SECRET else "No")
 
-REDIRECT_URI = 'http://127.0.0.1:5000/callback'
+REDIRECT_URI = 'REDIRECT_URI = 'https://safetymusiczone-production.up.railway.app/callback'
 SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize'
 SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'
 SPOTIFY_API_URL = 'https://api.spotify.com/v1'
@@ -405,9 +405,9 @@ def get_track_details(track_id):
 def home():
     return "Welcome to Safety Music Zone! Use /login to authenticate with Spotify."
 
-@app.route("/guest")
-def guest_page():
-    return render_template("guest.html")
+# @app.route("/guest")
+# def guest_page():
+#     return render_template("guest.html")
 
 @app.route('/test-form')
 def test_form():
