@@ -22,7 +22,7 @@ CLIENT_SECRET = os.getenv('SPOTIFY_CLIENT_SECRET')
 print("CLIENT_ID loaded:", "Yes" if CLIENT_ID else "No")
 print("CLIENT_SECRET loaded:", "Yes" if CLIENT_SECRET else "No")
 
-REDIRECT_URI = 'REDIRECT_URI = 'https://safetymusiczone-production.up.railway.app/callback'
+REDIRECT_URI = 'https://safetymusiczone-production.up.railway.app/callback'
 SPOTIFY_AUTH_URL = 'https://accounts.spotify.com/authorize'
 SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'
 SPOTIFY_API_URL = 'https://api.spotify.com/v1'
