@@ -6,3 +6,4 @@ python-socketio
 eventlet
 gunicorn
 requests
+python-dotenv

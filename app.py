@@ -8,6 +8,9 @@ import base64
 import json
 import time
 from dotenv import load_dotenv
+import eventlet
+
+eventlet.monkey_patch()
 
 # ----------------------
 # Load environment variables from .env
