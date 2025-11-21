@@ -1276,7 +1276,7 @@
         // Load party statistics
         async function loadPartyStats() {
             try {
-                const response = await fetch('${BASE_URL}/guest-stats');
+                const response = await fetch('/guest-stats');
                 const data = await response.json();
                 
                 if (response.ok) {

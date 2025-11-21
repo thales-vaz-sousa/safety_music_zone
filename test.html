@@ -666,7 +666,7 @@
         // Update dashboard statistics
         async function updateStats() {
             try {
-                const response = await fetch('${BASE_URL}/guest-stats');
+                const response = await fetch('/guest-stats');
                 const data = await response.json();
                 
                 if (response.ok) {
