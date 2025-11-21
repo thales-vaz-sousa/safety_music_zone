@@ -1,0 +1,6 @@
+Flask
+Flask-SQLAlchemy
+gunicorn
+python-socketio
+flask-socketio
+eventlet
