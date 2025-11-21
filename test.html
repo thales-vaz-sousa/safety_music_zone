@@ -627,9 +627,11 @@
 
         // Initialize WebSocket connection
         function initSocket() {
-            socket = io(BASE_URL);
+            socket = io(BASE_URL, {
+                transports: ["websocket"],
+                upgrade: false
+            });
 
-            
             socket.on('connect', () => {
                 console.log('Connected to server');
                 document.getElementById('realTimeIndicator').style.display = 'inline-flex';
