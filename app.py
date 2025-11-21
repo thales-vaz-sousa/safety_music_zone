@@ -28,6 +28,7 @@ SPOTIFY_TOKEN_URL = 'https://accounts.spotify.com/api/token'
 SPOTIFY_API_URL = 'https://api.spotify.com/v1'
 SCOPES = 'user-read-private user-read-email'
 
+
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///church_party.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
