@@ -407,13 +407,13 @@ def home():
 
 @app.route("/guest")
 def guest_page():
-    return render_template("guest.html")
+    return render_template("templates/guest.html")
 
 @app.route('/test-form')
 def test_form():
     """Serve the test form"""
     try:
-        with open('test.html', 'r', encoding='utf-8') as file:
+        with open('templates/test.html', 'r', encoding='utf-8') as file:
             return file.read()
     except FileNotFoundError:
         return "test.html file not found. Please create the file in your project folder.", 404
