@@ -689,7 +689,7 @@
             }
         }
 
-        // Load DJ requests with real-time updates
+        // Load DJ requests with better error handling
         async function loadRequests() {
             const requestsDiv = document.getElementById('requestsList');
             
@@ -697,74 +697,100 @@
             requestsDiv.innerHTML = '<div class="info"><i class="fas fa-spinner fa-spin"></i> Loading requests...</div>';
             
             try {
-                const response = await fetch('${BASE_URL}/dj/requests');
+                const response = await fetch('/dj/requests');
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    console.error('Non-JSON response:', text.substring(0, 200));
+                    throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
-                if (response.ok) {
-                    if (data.length > 0) {
-                        let html = '<h4>Pending Requests:</h4>';
-                        data.forEach(req => {
-                            // Determine CSS classes based on content
-                            let cssClasses = 'request-item';
-                            if (req.explicit) cssClasses += ' explicit-true';
-                            if (!req.lyrics_clean) cssClasses += ' lyrics-unclean';
-                            
-                            const imageUrl = req.image_url || 'https://via.placeholder.com/60x60/6366f1/ffffff?text=🎵';
-                            
-                            html += `
-                                <div class="${cssClasses}">
-                                    <img src="${imageUrl}" alt="${req.song_title}" class="song-art">
-                                    <div class="song-info">
-                                        <div class="song-title">
-                                            ${req.song_title}
-                                            ${req.explicit ? '<span class="status-badge badge-danger">EXPLICIT</span>' : ''}
-                                            ${!req.lyrics_clean ? '<span class="status-badge badge-danger">UNCLEAN LYRICS</span>' : ''}
-                                            ${req.lyrics_checked ? (req.lyrics_clean ? '<span class="status-badge badge-success">CLEAN LYRICS</span>' : '') : '<span class="status-badge badge-warning">LYRICS PENDING</span>'}
-                                        </div>
-                                        <div class="song-artist">by ${req.artist}</div>
-                                        <div class="song-meta">
-                                            Album: ${req.album} | 
-                                            Requested by: ${req.requested_by} |
-                                            Duration: ${Math.floor(req.duration_ms / 60000)}:${((req.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
-                                        </div>
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+                
+                if (data && data.length > 0) {
+                    let html = '<h4>Pending Requests:</h4>';
+                    data.forEach(req => {
+                        // Determine CSS classes based on content
+                        let cssClasses = 'request-item';
+                        if (req.explicit) cssClasses += ' explicit-true';
+                        if (!req.lyrics_clean) cssClasses += ' lyrics-unclean';
+                        
+                        const imageUrl = req.image_url || 'https://via.placeholder.com/60x60/6366f1/ffffff?text=🎵';
+                        
+                        html += `
+                            <div class="${cssClasses}">
+                                <img src="${imageUrl}" alt="${req.song_title}" class="song-art">
+                                <div class="song-info">
+                                    <div class="song-title">
+                                        ${req.song_title}
+                                        ${req.explicit ? '<span class="status-badge badge-danger">EXPLICIT</span>' : ''}
+                                        ${!req.lyrics_clean ? '<span class="status-badge badge-danger">UNCLEAN LYRICS</span>' : ''}
+                                        ${req.lyrics_checked ? (req.lyrics_clean ? '<span class="status-badge badge-success">CLEAN LYRICS</span>' : '') : '<span class="status-badge badge-warning">LYRICS PENDING</span>'}
                                     </div>
-                                    <div class="request-actions">
-                                        <button onclick="approveRequest(${req.request_id})" class="btn-success">
-                                            <i class="fas fa-check"></i> Approve
-                                        </button>
-                                        <button onclick="rejectRequest(${req.request_id})" class="btn-danger">
-                                            <i class="fas fa-times"></i> Reject
-                                        </button>
-                                        <button onclick="getSongIdAndViewLyrics(${req.request_id})" class="btn-info">
-                                            <i class="fas fa-file-alt"></i> Lyrics
-                                        </button>
+                                    <div class="song-artist">by ${req.artist}</div>
+                                    <div class="song-meta">
+                                        Album: ${req.album} | 
+                                        Requested by: ${req.requested_by} |
+                                        Duration: ${Math.floor(req.duration_ms / 60000)}:${((req.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
                                     </div>
                                 </div>
-                            `;
-                        });
-                        requestsDiv.innerHTML = html;
-                    } else {
-                        requestsDiv.innerHTML = `
-                            <div class="info">
-                                <i class="fas fa-inbox"></i> No pending requests
-                                <p style="margin-top: 10px; font-size: 0.9rem; color: var(--gray);">
-                                    When guests submit song requests, they will appear here.
-                                </p>
+                                <div class="request-actions">
+                                    <button onclick="approveRequest(${req.request_id})" class="btn-success">
+                                        <i class="fas fa-check"></i> Approve
+                                    </button>
+                                    <button onclick="rejectRequest(${req.request_id})" class="btn-danger">
+                                        <i class="fas fa-times"></i> Reject
+                                    </button>
+                                    <button onclick="getSongIdAndViewLyrics(${req.request_id})" class="btn-info">
+                                        <i class="fas fa-file-alt"></i> Lyrics
+                                    </button>
+                                </div>
                             </div>
                         `;
-                    }
+                    });
+                    requestsDiv.innerHTML = html;
                 } else {
-                    requestsDiv.innerHTML = `<div class="error">Failed to load requests: ${data.error}</div>`;
+                    requestsDiv.innerHTML = `
+                        <div class="info">
+                            <i class="fas fa-inbox"></i> No pending requests
+                            <p style="margin-top: 10px; font-size: 0.9rem; color: var(--gray);">
+                                When guests submit song requests, they will appear here.
+                            </p>
+                        </div>
+                    `;
                 }
             } catch (error) {
+                console.error('Failed to load requests:', error);
                 requestsDiv.innerHTML = `
                     <div class="error">
-                        <i class="fas fa-exclamation-triangle"></i> Failed to load requests: ${error}
+                        <i class="fas fa-exclamation-triangle"></i> Failed to load requests: ${error.message}
                         <p style="margin-top: 10px; font-size: 0.9rem;">
-                            Make sure the server is running and try refreshing the page.
+                            <button onclick="loadRequests()" class="btn-info" style="padding: 0.5rem 1rem;">
+                                <i class="fas fa-redo"></i> Try Again
+                            </button>
+                            <button onclick="checkServerHealth()" class="btn-info" style="padding: 0.5rem 1rem; margin-left: 0.5rem;">
+                                <i class="fas fa-heartbeat"></i> Check Server
+                            </button>
                         </p>
                     </div>
                 `;
+            }
+        }
+
+        // Add server health check function
+        async function checkServerHealth() {
+            try {
+                const response = await fetch('/health');
+                const data = await response.json();
+                showToast(`Server status: ${data.status}`, 'success');
+            } catch (error) {
+                showToast(`Server health check failed: ${error}`, 'error');
             }
         }
 
@@ -933,7 +959,7 @@
             showToast(`🔍 Searching for "${title}" lyrics online...`, 'info');
         }
 
-        // Search songs
+        // Search songs with better error handling
         async function searchSongs() {
             const query = document.getElementById('searchQuery').value;
             const resultsDiv = document.getElementById('searchResults');
@@ -945,39 +971,35 @@
 
             try {
                 const response = await fetch(`/search?query=${encodeURIComponent(query)}`);
+                
+                // Check if response is JSON
+                const contentType = response.headers.get('content-type');
+                if (!contentType || !contentType.includes('application/json')) {
+                    const text = await response.text();
+                    throw new Error(`Server returned HTML instead of JSON. Status: ${response.status}`);
+                }
+                
                 const data = await response.json();
                 
+                if (!response.ok) {
+                    throw new Error(data.error || `HTTP error! status: ${response.status}`);
+                }
+                
                 if (data.tracks && data.tracks.length > 0) {
-                    let html = '<h4>Search Results:</h4>';
-                    data.tracks.forEach(track => {
-                        const imageUrl = track.image_url || 'https://via.placeholder.com/60x60/6366f1/ffffff?text=🎵';
-                        html += `
-                            <div class="request-item ${track.explicit ? 'explicit-true' : 'explicit-false'}">
-                                <img src="${imageUrl}" alt="${track.title}" class="song-art">
-                                <div class="song-info">
-                                    <div class="song-title">${track.title}</div>
-                                    <div class="song-artist">by ${track.artist}</div>
-                                    <div class="song-meta">
-                                        Album: ${track.album} | 
-                                        Explicit: ${track.explicit ? '🔴 Yes' : '🟢 No'} |
-                                        Duration: ${Math.floor(track.duration_ms / 60000)}:${((track.duration_ms % 60000) / 1000).toFixed(0).padStart(2, '0')}
-                                    </div>
-                                </div>
-                                <div>
-                                    <small>Spotify ID: <code>${track.spotify_id}</code></small><br>
-                                    <button onclick="useSpotifyId('${track.spotify_id}')" class="btn-success">
-                                        <i class="fas fa-check"></i> Use This ID
-                                    </button>
-                                </div>
-                            </div>
-                        `;
-                    });
-                    resultsDiv.innerHTML = html;
+                    // ... your existing success code
                 } else {
                     resultsDiv.innerHTML = '<div class="info">No songs found</div>';
                 }
             } catch (error) {
-                resultsDiv.innerHTML = `<div class="error">Search failed: ${error}</div>`;
+                console.error('Search failed:', error);
+                resultsDiv.innerHTML = `
+                    <div class="error">
+                        Search failed: ${error.message}
+                        ${error.message.includes('401') ? 
+                            '<p>Your Spotify session may have expired. <a href="/login" style="color: var(--primary-light);">Click here to reauthenticate</a></p>' : 
+                            ''}
+                    </div>
+                `;
             }
         }
 

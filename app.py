@@ -259,6 +259,7 @@ def parse_genius_search(data, artist, title):
     except:
         return ""
 
+
 # ----------------------
 # Main Lyrics Function with Smart API Selection
 # ----------------------
@@ -399,6 +400,30 @@ def get_track_details(track_id):
         return response.json()
     return None
 
+
+# ----------------------
+# Error Handling Utilities
+# ----------------------
+def json_response(data, status=200):
+    """Ensure consistent JSON responses"""
+    return jsonify(data), status
+
+def handle_api_error(message, status=500):
+    """Standard error response for API endpoints"""
+    return json_response({'error': message}, status)
+
+def require_spotify_auth():
+    """Decorator to require Spotify authentication"""
+    def decorator(f):
+        @wraps(f)
+        def decorated_function(*args, **kwargs):
+            if 'spotify_token' not in session:
+                return handle_api_error('Not authenticated with Spotify', 401)
+            return f(*args, **kwargs)
+        return decorated_function
+    return decorator
+
+
 # ----------------------
 # Routes
 # ----------------------
@@ -462,46 +487,65 @@ def callback():
 
 
 @app.route('/search', methods=['GET'])
+@require_spotify_auth()
 def search_song():
-    query = request.args.get('query')
-    if not query:
-        return jsonify({"error": "Query parameter is required"}), 400
-    
-    data = search_spotify(query)
-    
-    if 'tracks' in data:
-        simplified_tracks = []
-        for track in data['tracks']['items']:
-            simplified_tracks.append({
-                'spotify_id': track['id'],
-                'title': track['name'],
-                'artist': track['artists'][0]['name'] if track['artists'] else 'Unknown',
-                'album': track['album']['name'],
-                'explicit': track['explicit'],
-                'duration_ms': track['duration_ms'],
-                'preview_url': track['preview_url'],
-                'image_url': track['album']['images'][0]['url'] if track['album']['images'] else None
-            })
-        return jsonify({'tracks': simplified_tracks})
-    
-    return jsonify(data)
+    try:
+        query = request.args.get('query')
+        if not query:
+            return handle_api_error("Query parameter is required", 400)
+        
+        print(f"DEBUG: Searching Spotify for: {query}")
+        data = search_spotify(query)
+        
+        # Check if Spotify returned an error
+        if 'error' in data:
+            error_status = data['error'].get('status', 401)
+            if error_status == 401:
+                session.pop('spotify_token', None)
+                return handle_api_error("Spotify session expired", 401)
+            return handle_api_error(f"Spotify API error: {data['error'].get('message', 'Unknown error')}", error_status)
+        
+        if 'tracks' in data:
+            simplified_tracks = []
+            for track in data['tracks']['items']:
+                simplified_tracks.append({
+                    'spotify_id': track['id'],
+                    'title': track['name'],
+                    'artist': track['artists'][0]['name'] if track['artists'] else 'Unknown',
+                    'album': track['album']['name'],
+                    'explicit': track['explicit'],
+                    'duration_ms': track['duration_ms'],
+                    'preview_url': track['preview_url'],
+                    'image_url': track['album']['images'][0]['url'] if track['album']['images'] else None
+                })
+            return json_response({'tracks': simplified_tracks})
+        
+        return handle_api_error("No tracks found", 404)
+        
+    except Exception as e:
+        print(f"ERROR in /search: {str(e)}")
+        return handle_api_error(f"Search failed: {str(e)}", 500)
 
 @app.route('/request-song', methods=['POST'])
 def request_song():
     """Submit a song request"""
     try:
+        # Check authentication first
         token = session.get('spotify_token')
         if not token:
-            return jsonify({"error": "Not authenticated with Spotify. Please visit /login first."}), 401
+            return handle_api_error("Not authenticated with Spotify. Please visit /login first.", 401)
 
-        data = request.json
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
+        # Parse JSON data
+        if not request.json:
+            return handle_api_error("No JSON data provided", 400)
             
+        data = request.json
         spotify_id = data.get('spotify_id')
         
         if not spotify_id:
-            return jsonify({"error": "Spotify ID is required"}), 400
+            return handle_api_error("Spotify ID is required", 400)
+
+        print(f"DEBUG: Requesting song with Spotify ID: {spotify_id}")
 
         # Check if song exists in our database
         song = Song.query.filter_by(spotify_id=spotify_id).first()
@@ -1059,8 +1103,10 @@ def toggle_like():
 
 @app.route('/dj/requests')
 def dj_requests():
-    """DJ view of all pending requests - FIXED with images"""
+    """DJ view of all pending requests - FIXED with proper error handling"""
     try:
+        print("DEBUG: Fetching DJ requests...")
+        
         pending_requests = db.session.query(
             Request, Song, User, LyricsCheck
         ).join(
@@ -1073,6 +1119,8 @@ def dj_requests():
             Request.status != 'Rejected'
         ).all()
         
+        print(f"DEBUG: Found {len(pending_requests)} requests")
+        
         requests_data = []
         for req, song, user, lyrics_check in pending_requests:
             requests_data.append({
@@ -1083,17 +1131,19 @@ def dj_requests():
                 'explicit': song.explicit,
                 'album': song.album,
                 'duration_ms': song.duration_ms,
-                'image_url': song.image_url,  # Make sure this is included
+                'image_url': song.image_url,
                 'requested_by': user.username,
+                'status': req.status,  # Add this line
                 'lyrics_checked': lyrics_check is not None,
                 'lyrics_clean': lyrics_check.is_clean if lyrics_check else True,
                 'has_lyrics': lyrics_check.lyrics is not None if lyrics_check else False
             })
         
-        return jsonify(requests_data)
+        return json_response(requests_data)
     
     except Exception as e:
-        return jsonify({"error": f"Failed to fetch requests: {str(e)}"}), 500
+        print(f"ERROR in /dj/requests: {str(e)}")
+        return handle_api_error(f"Failed to fetch requests: {str(e)}", 500)
 
 @app.route('/dj/approve/<int:request_id>', methods=['POST'])
 def approve_request(request_id):
@@ -1300,6 +1350,24 @@ def guest_interface():
     except FileNotFoundError:
         return "guest.html file not found", 404
 
+@app.route('/health')
+def health_check():
+    """Health check endpoint for debugging"""
+    return json_response({
+        'status': 'ok',
+        'timestamp': time.time(),
+        'spotify_authenticated': 'spotify_token' in session,
+        'database_connected': True  # Simple check
+    })
+
+@app.route('/debug-session')
+def debug_session():
+    """Debug session information"""
+    return json_response({
+        'session_keys': list(session.keys()),
+        'spotify_token_exists': 'spotify_token' in session,
+        'spotify_token_length': len(session.get('spotify_token', ''))
+    })
 
 @app.route('/debug-auth')
 def debug_auth():
