@@ -989,11 +989,14 @@
             }
         }
 
+        // Add this line at the beginning of your script in test.html
+        const BASE_URL = "https://safetymusiczone-production.up.railway.app";
+
         // Load approved songs with likes - UPDATED VERSION
         async function loadApprovedSongs() {
             try {
                 const guestId = getGuestId();
-                const response = await fetch(`${BASE_URL}/approved-songs?guest_id=${guestId}`);
+                const response = await fetch(BASE_URL + '/approved-songs?guest_id=' + guestId);
                 const data = await response.json();
                 
                 const approvedSongsDiv = document.getElementById('approvedSongs');
@@ -1049,7 +1052,7 @@
         // Toggle like on approved song
         async function toggleLike(songId) {
             try {
-                const response = await fetch('${BASE_URL}/toggle-like', {
+                const response = await fetch(BASE_URL + '/toggle-like', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1150,7 +1153,7 @@
                 showStatus('Submitting your request...', 'pending');
                 lastRequestTime = now;
                 
-                const response = await fetch('${BASE_URL}/request-song', {
+                const response = await fetch(BASE_URL + '/request-song', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
@@ -1191,7 +1194,7 @@
             const queueList = document.getElementById('queueList');
             
             try {
-                const response = await fetch('${BASE_URL}/dj/requests');
+                const response = await fetch(BASE_URL + '/dj/requests');
                 const data = await response.json();
                 
                 if (response.ok && data.length > 0) {
@@ -1248,7 +1251,7 @@
         // Load popular songs
         async function loadPopularSongs() {
             try {
-                const response = await fetch('${BASE_URL}/popular-songs');
+                const response = await fetch(BASE_URL + '/popular-songs');
                 const data = await response.json();
                 
                 let html = '';

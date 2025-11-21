@@ -620,7 +620,10 @@
 
     <script src="https://cdn.socket.io/4.5.0/socket.io.min.js"></script>
     <script>
-        let currentSongId = null;
+                // Add this line at the beginning of your script in test.html
+        const BASE_URL = "https://safetymusiczone-production.up.railway.app";
+
+        let currentSongId = null;   
         let currentSongTitle = '';
         let currentSongArtist = '';
         let socket = null;
@@ -676,7 +679,7 @@
                     document.getElementById('pendingRequestsStat').textContent = data.pending_requests || 0;
                     
                     // Get approved songs count
-                    const approvedResponse = await fetch('${BASE_URL}/approved-songs');
+                    const approvedResponse = await fetch(BASE_URL + '/approved-songs');
                     const approvedData = await approvedResponse.json();
                     if (approvedResponse.ok) {
                         document.getElementById('approvedSongsStat').textContent = approvedData.length || 0;
@@ -797,7 +800,7 @@
         // Get song_id from request_id and view lyrics
         async function getSongIdAndViewLyrics(requestId) {
             try {
-                const response = await fetch('${BASE_URL}/dj/requests');
+                const response = await fetch(BASE_URL + '/dj/requests');
                 const requests = await response.json();
                 
                 if (response.ok) {
@@ -1020,7 +1023,7 @@
             }
 
             try {
-                const response = await fetch('${BASE_URL}/request-song', {
+                const response = await fetch(BASE_URL + '/request-song', {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
