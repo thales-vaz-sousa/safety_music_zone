@@ -405,7 +405,9 @@ def get_track_details(track_id):
 def home():
     return "Welcome to Safety Music Zone! Use /login to authenticate with Spotify."
 
-
+@app.route("/guest")
+def guest_page():
+    return render_template("guest.html")
 
 @app.route('/test-form')
 def test_form():
